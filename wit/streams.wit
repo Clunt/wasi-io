@@ -1,34 +1,27 @@
 package wasi:io@0.2.0;
 
-/// WASI I/O is an I/O abstraction API which is currently focused on providing
-/// stream types.
+/// WASI I/O是输出/输出(I/O)抽象API，目前专注于提供stream类型。
 ///
-/// In the future, the component model is expected to add built-in stream types;
-/// when it does, they are expected to subsume this API.
+/// 未来，组件模型预计会添加内置(built-in)stream类型；当其发生时，它将应包含此API。
 interface streams {
     use error.{error};
     use poll.{pollable};
 
-    /// An error for input-stream and output-stream operations.
+    /// 输入流(input-stream)和输出流(output-stream)操作的错误
     variant stream-error {
-        /// The last operation (a write or flush) failed before completion.
+        /// 在完成之前的最后一次操作（写入(write)或刷新(flutsh)）失败。
         ///
-        /// More information is available in the `error` payload.
+        /// 更多信息可以在`error`载荷中获取。
         last-operation-failed(error),
-        /// The stream is closed: no more input will be accepted by the
-        /// stream. A closed output-stream will return this error on all
-        /// future operations.
+        /// 流已关闭：流将不再接受任何输入。关闭的输出流将在后续的所有操作中返回此错误。
         closed
     }
 
-    /// An input bytestream.
+    /// 输入字节流(bytestream)。
     ///
-    /// `input-stream`s are *non-blocking* to the extent practical on underlying
-    /// platforms. I/O operations always return promptly; if fewer bytes are
-    /// promptly available than requested, they return the number of bytes promptly
-    /// available, which could even be zero. To wait for data to be available,
-    /// use the `subscribe` function to obtain a `pollable` which can be polled
-    /// for using `wasi:io/poll`.
+    /// `input-stream`在底层架构上实际情况是*非阻塞的*。
+    /// I/O操作通常立即返回；如果立即可用的字节数少于请求的，则其返回立即可用的字节数，甚至可能为零。
+    /// 为了等待可用数据，使用`subscribe`函数获取`pollable`，其可用`wasi:io/poll`进行轮询。
     resource input-stream {
         /// Perform a non-blocking read from the stream.
         ///
