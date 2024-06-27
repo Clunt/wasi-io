@@ -1,26 +1,26 @@
 # WASI I/O
 
-A proposed [WebAssembly System Interface](https://github.com/WebAssembly/WASI) API.
+[WebAssembly系统接口(WebAssembly System Interface)](https://github.com/WebAssembly/WASI)API提案
 
-### Current Phase
+### 当前阶段（Current Phase）
 
-WASI I/O is currently in [Phase 3].
+WASI I/O is currently in [阶段3(Phase 3)][Phase 3].
 
 [Phase 3]: https://github.com/WebAssembly/WASI/blob/main/Proposals.md#phase-3---implementation-phase-cg--wg
 
-### Champions
+### 拥护者（Champions）
 
 - Dan Gohman
 
-### Portability Criteria
+### 可移植性标准（Portability Criteria）
 
-WASI I/O must have host implementations which can pass the testsuite on at least Windows, macOS, and Linux.
+WASI I/O必须有至少可以在Windows、macOS和Linux上通过测试套件(testsuite)的主机实现。
 
-WASI I/O must have at least two complete independent implementations.
+WASI I/O 必须至少有两个完整独立的实现。
 
-## Table of Contents
+## 目录（Table of Contents）
 
-- [Introduction](#introduction)
+- [介绍（Introduction）](#介绍introduction)
 - [Goals [or Motivating Use Cases, or Scenarios]](#goals-or-motivating-use-cases-or-scenarios)
 - [Non-goals](#non-goals)
 - [API walk-through](#api-walk-through)
@@ -34,28 +34,23 @@ WASI I/O must have at least two complete independent implementations.
 - [Stakeholder Interest & Feedback](#stakeholder-interest--feedback)
 - [References & acknowledgements](#references--acknowledgements)
 
-### Introduction
+### 介绍（Introduction）
 
-Wasi I/O is an API providing I/O stream abstractions. There are two
-types, `input-stream`, and `output-stream`, which support `read` and
-`write`, respectively, as well as a number of utility functions.
+Wasi I/O提供输入/输出流(I/O stream)抽象的API。它有两种类型，`input-stream`和`output-stream`，分别支持`read`和`write`、以及许多实用函数。
 
-### Goals
+### 目标（Goals）
 
- - Be usable by wasi-libc to implement POSIX-like file and socket APIs.
- - Support many different kinds of host streams, including files, sockets,
-   pipes, character devices, and more.
+ - 可被wasi-libc用来实现类POSIX文件(POSIX-like file)和套接字(socket)API。
+ - 支持多种不同宿主流(host stream)，包括文件(file)、套接字(socket)、管道(pipe)、字符设备(character device)等
 
-### Non-goals
+### 非目标（Non-goals）
 
- - Support for async. That will be addressed in the component-model async
-   design, where we can have the benefit of tigher integration with language
-   bindings.
- - Bidirectional streams.
+ - 支持异步。它将在组件模型异步设计中得到解决，这样我们能从语言绑定更紧密的集成中受益。
+ - 双向流(bidirectional streams)。
 
-### API walk-through
+### API详解（API walk-through）
 
-#### Use Case: copying from input to output using `read`/`write`
+#### 用例：使用`read`/`write`从输出复制到输出（Use Case: copying from input to output using `read`/`write`）
 
 ```rust
    fn copy_data(input: InputStream, output: OutputStream) -> Result<(), StreamError> {
@@ -94,7 +89,7 @@ types, `input-stream`, and `output-stream`, which support `read` and
 }
 ```
 
-#### Use case: copying from input to output using `splice`
+#### 用例：使用`splice`从输入复制到输出（Use case: copying from input to output using `splice`）
 
 ```rust
    fn copy_data(input: InputStream, output: OutputStream) -> Result<(), StreamError> {
@@ -116,7 +111,7 @@ types, `input-stream`, and `output-stream`, which support `read` and
 }
 ```
 
-#### Use case: copying from input to output using `forward`
+#### 用例：使用`forward`复制输入到输出（Use case: copying from input to output using `forward`）
 
 ```rust
    fn copy_data(input: InputStream, output: OutputStream) -> Result<(), StreamError> {
@@ -126,35 +121,27 @@ types, `input-stream`, and `output-stream`, which support `read` and
 }
 ```
 
-### Detailed design discussion
+### 详细设计讨论（Detailed design discussion）
 
-#### Should we have support for non-blocking read/write?
+#### 我们是否应支持非阻塞读/写？（Should we have support for non-blocking read/write?）
 
-This may be something we'll need to revisit, but currently, the way
-non-blocking streams work is that they perform reads or writes that
-read or write fewer bytes than requested.
+这可能是我们需要重新考虑的事情，但目前，非阻塞流(non-blocking stream)的工作方式是它们执行读取或写入比请求的字节数更少。
 
-#### Why do read/write use u64 sizes?
+#### 为什么读/写使用u64大小？（Why do read/write use u64 sizes?）
 
-This is to make the API independent of the address space size of
-the caller. Callees are still advised to avoid using sizes that
-are larger than their instances will be able to allocate.
+这是为了使API独立于调用者的地址空间大小。仍然建议被调用者避免使用大于其实例能够分配的大小。
 
-#### Why have a `forward` function when you can just `splice` in a loop?
+#### 当可以在循环中`splice`时，为什么还需要`forward`函数？（Why have a `forward` function when you can just `splice` in a loop?）
 
-This seems like it'll be a common use case, and `forward`
-addresses it in a very simple way.
+这似乎是一个常见的用例，而`forward`以一种非常简单的方式解决了它。
 
-### Stakeholder Interest & Feedback
+### 项目相关方利益 & 反馈（Stakeholder Interest & Feedback）
 
-Wasi-io is a dependency of wasi-filesystem, wasi-sockets, and wasi-http, and
-is a foundational piece of WASI Preview 2.
+Wasi-is是wasi-filesystem、wasi-sockets和wasi-http的依赖项，也是WASI Preview 2的基础部分。
 
-### References & acknowledgements
+### 参考文献 & 致谢（References & acknowledgements）
 
-Many thanks for valuable feedback and advice from:
+非常感谢以下人员提供的宝贵反馈和建议：
 
-- Thanks to Luke Wagner for many design functions and the design of
-  the component-model async streams which inform the design here.
-- Thanks to Calvin Prewitt for the idea to include a `forward` function
-  in this API.
+- 感谢Luke Wagner的许多设计功能以及为此处的设计提供参考的组件模型异步流的设计。
+- 感谢Calvin Prewitt提出在该API包含`forward`函数的想法。
