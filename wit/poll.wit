@@ -1,42 +1,35 @@
 package wasi:io@0.2.0;
 
-/// A poll API intended to let users wait for I/O events on multiple handles
-/// at once.
+/// 轮询API旨在让用户同时等待多个句柄上的输入/输出(I/O)事件
 interface poll {
-    /// `pollable` represents a single I/O event which may be ready, or not.
+    /// `pollable`表示一个可能已就绪(ready)或未就绪的单个输入/输出(I/O)事件。
     resource pollable {
 
-      /// Return the readiness of a pollable. This function never blocks.
+      /// 返回pollable(可轮询项)的就绪状态(readiness)。此函数永不阻塞。
       ///
-      /// Returns `true` when the pollable is ready, and `false` otherwise.
+      /// 当pollable(可轮询项)已就绪返回`true`，否则返回`false`。
       ready: func() -> bool;
 
-      /// `block` returns immediately if the pollable is ready, and otherwise
-      /// blocks until ready.
+      /// 如果pollable(可轮询项)已就绪，`block`立即返回，否则阻塞至准备就绪。
       ///
-      /// This function is equivalent to calling `poll.poll` on a list
-      /// containing only this pollable.
+      /// 此函数等同于在只包含这个pollable(可轮询项)的列表上调用`poll.poll`。
       block: func();
     }
 
-    /// Poll for completion on a set of pollables.
+    /// 对一组可轮询项进行轮询以完成。
     ///
-    /// This function takes a list of pollables, which identify I/O sources of
-    /// interest, and waits until one or more of the events is ready for I/O.
+    /// 此函数接受一个pollable列表，这些可轮询项(pollable)标识其关注的输入/输出(I/O)源，
+    /// 并等待直到一个或多个事件准备就绪进行输入/输出(I/O)。
     ///
-    /// The result `list<u32>` contains one or more indices of handles in the
-    /// argument list that is ready for I/O.
+    /// 返回值`list<u32>`包含了参数列表中一个或多个输入/输出(I/O)已就绪的句柄索引。
     ///
-    /// This function traps if either:
-    /// - the list is empty, or:
-    /// - the list contains more elements than can be indexed with a `u32` value.
+    /// 此函数捕获两者任何一个：
+    /// - list为空，或者：
+    /// - list包含的元素超过`u32`值的可索引范围。
     ///
-    /// A timeout can be implemented by adding a pollable from the
-    /// wasi-clocks API to the list.
+    /// 超时(timeout)可以通过将wasi-clocks API的pollable添加至list实现。
     ///
-    /// This function does not return a `result`; polling in itself does not
-    /// do any I/O so it doesn't fail. If any of the I/O sources identified by
-    /// the pollables has an error, it is indicated by marking the source as
-    /// being ready for I/O.
+    /// 此函数不返回`result`；轮询自身不进行任何输入/输出(I/O)，因此不会失败。
+    /// 如果pollable标识的任何输入/输出(I/O)源有错误，则通过将源标记为已就绪I/O来表示
     poll: func(in: list<borrow<pollable>>) -> list<u32>;
 }
