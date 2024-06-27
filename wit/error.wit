@@ -2,31 +2,24 @@ package wasi:io@0.2.0;
 
 
 interface error {
-    /// A resource which represents some error information.
+    /// 表示某些错误信息的资源。
     ///
-    /// The only method provided by this resource is `to-debug-string`,
-    /// which provides some human-readable information about the error.
+    /// 此资源(resource)提供的唯一方法是`to-debug-string`，它提供了一些关于错误的人类可读信息。
     ///
-    /// In the `wasi:io` package, this resource is returned through the
-    /// `wasi:io/streams/stream-error` type.
+    /// 在`wasi:io`包中，此资源(resource)通过`wasi:io/streams/stream-error`类型返回。
     ///
-    /// To provide more specific error information, other interfaces may
-    /// offer functions to "downcast" this error into more specific types. For example,
-    /// errors returned from streams derived from filesystem types can be described using
-    /// the filesystem's own error-code type. This is done using the function
-    /// `wasi:filesystem/types/filesystem-error-code`, which takes a `borrow<error>`
-    /// parameter and returns an `option<wasi:filesystem/types/error-code>`.
+    /// 为了提供更具体的错误信息，其他接口(interface)可能提供函数来进一步地将错误“向下转换(downcast)”为更具体的错误信息。
+    /// 例如，从文件系统类型派生的流返回的[错误][error]，可以使用文件系统自己的错误码类型来描述，
+    /// 使用函数`wasi:filesystem/types/filesystem-error-code`，
+    /// 其接受一个`borrow<error>`参数并返回`option<wasi:filesystem/types/error-code>`。
     ///
-    /// The set of functions which can "downcast" an `error` into a more
-    /// concrete type is open.
+    /// 可以将`error`“向下转换”为更具体类型的函数集是开放的。
     resource error {
-        /// Returns a string that is suitable to assist humans in debugging
-        /// this error.
+        /// 返回一个适合帮助人类调试此错误的字符串。
         ///
-        /// WARNING: The returned string should not be consumed mechanically!
-        /// It may change across platforms, hosts, or other implementation
-        /// details. Parsing this string is a major platform-compatibility
-        /// hazard.
+        /// 警告：返回的字符串不应被机器使用！
+        /// 它可能会随平台、宿主或其他实现细节而变化。
+        /// 解析这个字符串是严重的平台兼容性隐患。
         to-debug-string: func() -> string;
     }
 }
