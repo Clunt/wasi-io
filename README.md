@@ -4,7 +4,7 @@
 
 ### 当前阶段（Current Phase）
 
-WASI I/O is currently in [阶段3(Phase 3)][Phase 3].
+WASI I/O目前处于[第3阶段(Phase 3)][Phase 3].
 
 [Phase 3]: https://github.com/WebAssembly/WASI/blob/main/Proposals.md#phase-3---implementation-phase-cg--wg
 
@@ -21,18 +21,18 @@ WASI I/O 必须至少有两个完整独立的实现。
 ## 目录（Table of Contents）
 
 - [介绍（Introduction）](#介绍introduction)
-- [Goals [or Motivating Use Cases, or Scenarios]](#goals-or-motivating-use-cases-or-scenarios)
-- [Non-goals](#non-goals)
-- [API walk-through](#api-walk-through)
-  - [Use case: copying from input to output using `read`/`write`](#use-case-copying-from-input-to-output-using-readwrite)
-  - [Use case: copying from input to output using `splice`](#use-case-copying-from-input-to-output-using-splice)
-  - [Use case: copying from input to output using `forward`](#use-case-copying-from-input-to-output-using-forward)
-- [Detailed design discussion](#detailed-design-discussion)
-  - [Should we have support for non-blocking read/write?](#should-we-have-support-for-non-blocking-read-write)
-  - [Why do read/write use u64 sizes?[Tricky design choice 2]](#why-do-read-write-use-u64-sizes)
-  - [Why have a `forward` function when you can just `splice` in a loop?](#why-have-a-forward-function-when-you-can-just-splice-in-a-loop)
-- [Stakeholder Interest & Feedback](#stakeholder-interest--feedback)
-- [References & acknowledgements](#references--acknowledgements)
+- [目标（Goals）](#目标goals)
+- [非目标（Non-goals）](#非目标non-goals)
+- [API详解（API walk-through）](#API详解api-walk-through)
+  - [用例：使用`read`/`write`从输出复制到输出（Use Case: copying from input to output using `read`/`write`）](#用例使用readwrite从输出复制到输出use-case-copying-from-input-to-output-using-readwrite)
+  - [用例：使用`splice`从输入复制到输出（Use case: copying from input to output using `splice`）](#用例使用splice从输入复制到输出use-case-copying-from-input-to-output-using-splice)
+  - [用例：使用`forward`复制输入到输出（Use case: copying from input to output using `forward`）](#用例使用forward复制输入到输出use-case-copying-from-input-to-output-using-forward)
+- [详细设计讨论（Detailed design discussion）](#详细设计讨论detailed-design-discussion)
+  - [我们是否应支持非阻塞读/写？（Should we have support for non-blocking read/write?）](#我们是否应支持非阻塞读写should-we-have-support-for-non-blocking-readwrite)
+  - [为什么读/写使用u64大小？（Why do read/write use u64 sizes?）](#为什么读写使用u64大小why-do-readwrite-use-u64-sizes)
+  - [当可以在循环中`splice`时，为什么还需要`forward`函数？（Why have a `forward` function when you can just `splice` in a loop?）](#当可以在循环中splice时为什么还需要forward函数why-have-a-forward-function-when-you-can-just-splice-in-a-loop)
+- [项目相关方利益 & 反馈（Stakeholder Interest & Feedback）](#项目相关方利益--反馈stakeholder-interest--feedback)
+- [参考文献 & 致谢（References & acknowledgements）](#参考文献--致谢references--acknowledgements)
 
 ### 介绍（Introduction）
 
