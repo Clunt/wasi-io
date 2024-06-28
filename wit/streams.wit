@@ -9,7 +9,7 @@ interface streams {
 
     /// 输入流(input-stream)和输出流(output-stream)操作的错误
     variant stream-error {
-        /// 在完成之前的最后一次操作（写入(write)或刷新(flutsh)）失败。
+        /// 在完成之前的最后一次失败操作（write或flutsh）。
         ///
         /// 更多信息可以在`error`载荷中获取。
         last-operation-failed(error),
