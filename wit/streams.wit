@@ -20,235 +20,200 @@ interface streams {
     /// 输入字节流(bytestream)。
     ///
     /// `input-stream`在底层架构上实际情况是*非阻塞的*。
-    /// I/O操作通常立即返回；如果立即可用的字节数少于请求的，则其返回立即可用的字节数，甚至可能为零。
+    /// I/O操作总是立即返回；如果立即可用的字节数少于请求的，则其返回立即获得的字节数，甚至可能为零。
     /// 为了等待可用数据，使用`subscribe`函数获取`pollable`，其可用`wasi:io/poll`进行轮询。
     resource input-stream {
-        /// Perform a non-blocking read from the stream.
+        /// 从流中执行非阻塞读取
         ///
-        /// When the source of a `read` is binary data, the bytes from the source
-        /// are returned verbatim. When the source of a `read` is known to the
-        /// implementation to be text, bytes containing the UTF-8 encoding of the
-        /// text are returned.
+        /// 当`read`的源数据为二进制时，将原样返回源字节。
+        /// 当已知`read`的源数据实现为文本时，将返回包含该文本的UTF-8编码字节。
         ///
-        /// This function returns a list of bytes containing the read data,
-        /// when successful. The returned list will contain up to `len` bytes;
-        /// it may return fewer than requested, but not more. The list is
-        /// empty when no bytes are available for reading at this time. The
-        /// pollable given by `subscribe` will be ready when more bytes are
-        /// available.
+        /// 当成功时此函数返回包含读取数据的字节列表(`list<u8>`)。
+        /// 返回的list最多包含`len`个字节；其返回可能少于请求，但不会多。
+        /// 当前没有可读取的字节时，则list为空。
+        /// 当有更多可读取的字节时，则`subscribe`提供的pollable(可轮询对象)将ready(准备就绪)。
         ///
-        /// This function fails with a `stream-error` when the operation
-        /// encounters an error, giving `last-operation-failed`, or when the
-        /// stream is closed, giving `closed`.
+        /// 此函数在操作遇到错误时会失败并返回`stream-error`，错误为`last-operation-failed`，
+        /// 或者当stream(流)被关闭时，错误为`closed`。
         ///
-        /// When the caller gives a `len` of 0, it represents a request to
-        /// read 0 bytes. If the stream is still open, this call should
-        /// succeed and return an empty list, or otherwise fail with `closed`.
+        /// 当调用者传递`len`为0时，其代表请求读取0字节。
+        /// 如果stream(流)仍然为open(打开的)，此调用应成功并返回一个空list，
+        /// 否则(stream已关闭)返回`closed`失败。
         ///
-        /// The `len` parameter is a `u64`, which could represent a list of u8 which
-        /// is not possible to allocate in wasm32, or not desirable to allocate as
-        /// as a return value by the callee. The callee may return a list of bytes
-        /// less than `len` in size while more bytes are available for reading.
+        /// 参数`len`为`u64`，它可以表示一个在wasm32中无法分配的u8列表，或者不希望由被调用者分配作为返回值。
+        /// 当有更多可读取字节时，被调用者可以返回一个小于`len`大小的字节list(列表)。
         read: func(
-            /// The maximum number of bytes to read
+            /// 最大读取字节数
             len: u64
         ) -> result<list<u8>, stream-error>;
 
-        /// Read bytes from a stream, after blocking until at least one byte can
-        /// be read. Except for blocking, behavior is identical to `read`.
+        /// 从流中读取字节，阻塞直到至少可以读取一个字节。
+        /// 除了阻塞，行为与`read`相同。
         blocking-read: func(
-            /// The maximum number of bytes to read
+            /// 最大读取字节数
             len: u64
         ) -> result<list<u8>, stream-error>;
 
-        /// Skip bytes from a stream. Returns number of bytes skipped.
+        /// 从流中跳过若干字节。返回跳过的字节数。
         ///
-        /// Behaves identical to `read`, except instead of returning a list
-        /// of bytes, returns the number of bytes consumed from the stream.
+        /// 行为与`read`相同，除了不返回字节list，
+        /// 而是返回从流中消耗的字节数。
         skip: func(
-            /// The maximum number of bytes to skip.
+            /// 最大跳过字节数。
             len: u64,
         ) -> result<u64, stream-error>;
 
-        /// Skip bytes from a stream, after blocking until at least one byte
-        /// can be skipped. Except for blocking behavior, identical to `skip`.
+        /// 从流中跳过若干字节，阻塞直到至少可以跳过一个字节。
+        /// 除了阻塞行为，与`skip`相同。
         blocking-skip: func(
-            /// The maximum number of bytes to skip.
+            /// 最大跳过字节数。
             len: u64,
         ) -> result<u64, stream-error>;
 
-        /// Create a `pollable` which will resolve once either the specified stream
-        /// has bytes available to read or the other end of the stream has been
-        /// closed.
-        /// The created `pollable` is a child resource of the `input-stream`.
-        /// Implementations may trap if the `input-stream` is dropped before
-        /// all derived `pollable`s created with this function are dropped.
+        /// 创建`pollable`(可轮询对象)，它在指定的流有可读取字节或流的另一端被关闭时解析。
+        /// 创建的`pollable`是`input-stream`的子资源(child resource)。
+        /// 若在此函数创建导出的`pollable`均被释放之前丢弃`input-stream`，实现可能会出错。
         subscribe: func() -> pollable;
     }
 
 
-    /// An output bytestream.
+    /// 输出字节流。
     ///
-    /// `output-stream`s are *non-blocking* to the extent practical on
-    /// underlying platforms. Except where specified otherwise, I/O operations also
-    /// always return promptly, after the number of bytes that can be written
-    /// promptly, which could even be zero. To wait for the stream to be ready to
-    /// accept data, the `subscribe` function to obtain a `pollable` which can be
-    /// polled for using `wasi:io/poll`.
+    /// `output-stream`在底层架构上实际情况是*非阻塞的*。
+    /// 除非另有说明，I/O操作也总是立即返回，返回可立即写入的字节数，甚至可能为零。
+    /// 为了等待流准备就绪接受数据，使用`subscribe`函数获取`pollable`，其可用`wasi:io/poll`轮询。
     resource output-stream {
-        /// Check readiness for writing. This function never blocks.
+        /// 检查写入就绪状态。此函数永远不会阻塞。
         ///
-        /// Returns the number of bytes permitted for the next call to `write`,
-        /// or an error. Calling `write` with more bytes than this function has
-        /// permitted will trap.
+        /// 返回允许下次调用`write`的字节数，或返回一个错误。
+        /// 使用超过函数允许的字节数调用`write`将会出错。
         ///
-        /// When this function returns 0 bytes, the `subscribe` pollable will
-        /// become ready when this function will report at least 1 byte, or an
-        /// error.
+        /// 当函数返回0字节时，`subscribe`的pollable(可轮询对象)
+        /// 将会在此函数将报告至少1字节或错误时，变为就绪状态。
         check-write: func() -> result<u64, stream-error>;
 
-        /// Perform a write. This function never blocks.
+        /// 执行写入。此函数永远不会阻塞。
         ///
-        /// When the destination of a `write` is binary data, the bytes from
-        /// `contents` are written verbatim. When the destination of a `write` is
-        /// known to the implementation to be text, the bytes of `contents` are
-        /// transcoded from UTF-8 into the encoding of the destination and then
-        /// written.
+        /// 当`write`的目标为二进制数据时，来自`contents`的字节将原样写入。
+        /// 当已知`write`的目标实现为文本时，`contents`的字节将从UTF-8转码为目标编码后写入。
         ///
-        /// Precondition: check-write gave permit of Ok(n) and contents has a
-        /// length of less than or equal to n. Otherwise, this function will trap.
+        /// 前提条件：check-write返回允许的Ok(n)，因此contents的长度应小于或等于n。
+        /// 否则，此函数将出错。
         ///
-        /// returns Err(closed) without writing if the stream has closed since
-        /// the last call to check-write provided a permit.
+        /// 如果自上次调用check-write获取许可后流已关闭，则此函数在不写入时返回Err(closed)。
         write: func(
             contents: list<u8>
         ) -> result<_, stream-error>;
 
-        /// Perform a write of up to 4096 bytes, and then flush the stream. Block
-        /// until all of these operations are complete, or an error occurs.
+        /// 执行最多4096字节的写入，然后刷新(flush)流。
+        /// 阻塞直到这些操作全部完成，或者出现错误。
         ///
-        /// This is a convenience wrapper around the use of `check-write`,
-        /// `subscribe`, `write`, and `flush`, and is implemented with the
-        /// following pseudo-code:
+        /// 此为`check-write`、`subscribe`、`write`、和`flush`的便携包装，
+        /// 其伪代码实现如下：
         ///
         /// ```text
         /// let pollable = this.subscribe();
         /// while !contents.is_empty() {
-        ///     // Wait for the stream to become writable
+        ///     // 等待流变为可写入
         ///     pollable.block();
-        ///     let Ok(n) = this.check-write(); // eliding error handling
+        ///     let Ok(n) = this.check-write(); // 省略错误处理
         ///     let len = min(n, contents.len());
         ///     let (chunk, rest) = contents.split_at(len);
-        ///     this.write(chunk  );            // eliding error handling
+        ///     this.write(chunk);              // 省略错误处理
         ///     contents = rest;
         /// }
         /// this.flush();
-        /// // Wait for completion of `flush`
+        /// // 等待`flush`完成
         /// pollable.block();
-        /// // Check for any errors that arose during `flush`
-        /// let _ = this.check-write();         // eliding error handling
+        /// // 检查`flush`过程中出现的任何错误
+        /// let _ = this.check-write();         // 省略错误处理
         /// ```
         blocking-write-and-flush: func(
             contents: list<u8>
         ) -> result<_, stream-error>;
 
-        /// Request to flush buffered output. This function never blocks.
+        /// 请求刷新缓冲输出。此函数永远不会阻塞。
         ///
-        /// This tells the output-stream that the caller intends any buffered
-        /// output to be flushed. the output which is expected to be flushed
-        /// is all that has been passed to `write` prior to this call.
+        /// 其告知output-stream调用者希望刷新任何已缓冲的输出。
+        /// 预期将刷新在此调用之前所有`write`已传递的输出
         ///
-        /// Upon calling this function, the `output-stream` will not accept any
-        /// writes (`check-write` will return `ok(0)`) until the flush has
-        /// completed. The `subscribe` pollable will become ready when the
-        /// flush has completed and the stream can accept more writes.
+        /// 调用此函数后，在刷新完成之前`output-stream`将不接受任何写入（`check-write` 将返回`ok(0)`）。
+        /// 当刷新完成且流可以接受更多写入时`subscribe`的pollable(可轮询对象)将变为就绪状态。
         flush: func() -> result<_, stream-error>;
 
-        /// Request to flush buffered output, and block until flush completes
-        /// and stream is ready for writing again.
+        /// 请求刷新缓冲输出，并且阻塞直到刷新完成且流准备就绪再次写入。
         blocking-flush: func() -> result<_, stream-error>;
 
-        /// Create a `pollable` which will resolve once the output-stream
-        /// is ready for more writing, or an error has occured. When this
-        /// pollable is ready, `check-write` will return `ok(n)` with n>0, or an
-        /// error.
+        /// 创建`pollable`，其将在output-stream准备就绪更多写入或发生错误时解析(resolve)。
+        /// 当pollable(可轮询对象)已就绪时，`check-write`将返回`ok(n)`，其中n>0，或者返回一个错误。
         ///
-        /// If the stream is closed, this pollable is always ready immediately.
+        /// 如果流已关闭，此pollable总是立即准备就绪。
         ///
-        /// The created `pollable` is a child resource of the `output-stream`.
-        /// Implementations may trap if the `output-stream` is dropped before
-        /// all derived `pollable`s created with this function are dropped.
+        /// 创建的`pollable`是`output-stream`子资源(child resource)。
+        /// 若在此函数创建导出的`pollable`均被释放之前丢弃`output-stream`，实现可能会出错。
         subscribe: func() -> pollable;
 
-        /// Write zeroes to a stream.
+        /// 向流写入zeroes
         ///
-        /// This should be used precisely like `write` with the exact same
-        /// preconditions (must use check-write first), but instead of
-        /// passing a list of bytes, you simply pass the number of zero-bytes
-        /// that should be written.
+        /// 此应与`write`的使用方式完全相同，具有完全相同的前提条件（必须先使用check-write），
+        /// 但不传递字节列表(list)，而是传递应写入的zero-bytes数。
         write-zeroes: func(
-            /// The number of zero-bytes to write
+            /// 写入的zero-bytes数
             len: u64
         ) -> result<_, stream-error>;
 
-        /// Perform a write of up to 4096 zeroes, and then flush the stream.
-        /// Block until all of these operations are complete, or an error
-        /// occurs.
+        /// 执行最多4096 zeroes的写入，然后刷新(flush)流。
+        /// 阻塞直到这些操作全部完成，或者出现错误。
         ///
-        /// This is a convenience wrapper around the use of `check-write`,
-        /// `subscribe`, `write-zeroes`, and `flush`, and is implemented with
-        /// the following pseudo-code:
+        /// 此为`check-write`、`subscribe`、`write-zeroes`、和`flush`的便携包装，
+        /// 其伪代码实现如下：
         ///
         /// ```text
         /// let pollable = this.subscribe();
         /// while num_zeroes != 0 {
         ///     // Wait for the stream to become writable
         ///     pollable.block();
-        ///     let Ok(n) = this.check-write(); // eliding error handling
+        ///     let Ok(n) = this.check-write(); // 省略错误处理
         ///     let len = min(n, num_zeroes);
-        ///     this.write-zeroes(len);         // eliding error handling
+        ///     this.write-zeroes(len);         // 省略错误处理
         ///     num_zeroes -= len;
         /// }
         /// this.flush();
-        /// // Wait for completion of `flush`
+        /// // 等待`flush`完成
         /// pollable.block();
-        /// // Check for any errors that arose during `flush`
-        /// let _ = this.check-write();         // eliding error handling
+        /// // 检查`flush`过程中出现的任何错误
+        /// let _ = this.check-write();         // 省略错误处理
         /// ```
         blocking-write-zeroes-and-flush: func(
-            /// The number of zero-bytes to write
+            /// 写入的zero-bytes数
             len: u64
         ) -> result<_, stream-error>;
 
-        /// Read from one stream and write to another.
+        /// 从一个流中读取并写入到另一个流。
         ///
-        /// The behavior of splice is equivelant to:
-        /// 1. calling `check-write` on the `output-stream`
-        /// 2. calling `read` on the `input-stream` with the smaller of the
-        /// `check-write` permitted length and the `len` provided to `splice`
-        /// 3. calling `write` on the `output-stream` with that read data.
+        /// splice的行为等同于：
+        /// 1. 调用`output-stream`上的`check-write`
+        /// 2. 调用`input-stream`上的`read`，其参数取`check-write`准许长度和`splice`提供的`len`两者较小之一
+        /// 3. 调用`output-stream`上的`write`，其参数为read的数据。
         ///
-        /// Any error reported by the call to `check-write`, `read`, or
-        /// `write` ends the splice and reports that error.
+        /// 调用`check-write`、`read`、或`write`期间报告的错误，都会终止splice并报告该错误
         ///
-        /// This function returns the number of bytes transferred; it may be less
-        /// than `len`.
+        /// 此函数返回传输的字节数；其可能小于`len`。
         splice: func(
-            /// The stream to read from
+            /// 用于读取的流
             src: borrow<input-stream>,
-            /// The number of bytes to splice
+            /// 用于splice的字节数
             len: u64,
         ) -> result<u64, stream-error>;
 
-        /// Read from one stream and write to another, with blocking.
+        /// 从一个流中读取并写入到另一个流，有阻塞。
         ///
-        /// This is similar to `splice`, except that it blocks until the
-        /// `output-stream` is ready for writing, and the `input-stream`
-        /// is ready for reading, before performing the `splice`.
+        /// 其类似于`splice`，除了在执行`splice`会阻塞，
+        /// 直到`output-stream`准备就绪写入，且`input-stream`准备就绪读取。
         blocking-splice: func(
-            /// The stream to read from
+            /// 用于读取的流
             src: borrow<input-stream>,
-            /// The number of bytes to splice
+            /// 用于splice的字节数
             len: u64,
         ) -> result<u64, stream-error>;
     }
