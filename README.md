@@ -16,7 +16,7 @@ WASI I/O目前处于[第3阶段(Phase 3)][Phase 3]。
 
 WASI I/O必须有至少可以在Windows、macOS和Linux上通过测试套件(testsuite)的主机实现。
 
-WASI I/O 必须至少有两个完整独立的实现。
+WASI I/O必须至少有两个完整独立的实现。
 
 ## 目录（Table of Contents）
 
