@@ -1,10 +1,10 @@
 # WASI I/O
 
-[WebAssembly系统接口(WebAssembly System Interface)](https://github.com/WebAssembly/WASI)API提案
+[WebAssembly系统接口(WebAssembly System Interface)](https://github.com/WebAssembly/WASI)API提案。
 
 ### 当前阶段（Current Phase）
 
-WASI I/O目前处于[第3阶段(Phase 3)][Phase 3].
+WASI I/O目前处于[第3阶段(Phase 3)][Phase 3]。
 
 [Phase 3]: https://github.com/WebAssembly/WASI/blob/main/Proposals.md#phase-3---implementation-phase-cg--wg
 
